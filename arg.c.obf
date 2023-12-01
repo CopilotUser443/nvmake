@@ -1,0 +1,112 @@
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+/*
+//we omit all these parameters for parity sake. 90% of them are unused.
+void AddArgument(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+) {
+    char in_AL;
+    int iVar1;
+    char local_1028 [4096];
+    NVCHAR local_28 = 8;
+    char * local_1040;
+    char * local_1038;
+
+    vsprintf(
+        local_1028,
+        param_9,
+        &local_28
+    );
+    local_1040 = local_1028;
+    for (local_1038 = local_1040; *local_1038 != '\0'; local_1038++) {
+        iVar1 = isspace((int)*local_1038);
+        if (iVar1 != 0) {
+            *local_1038 = '\0';
+            if (local_1040 != local_1038) {
+                AddLiteralArgument(local_1040);
+            }
+            local_1040 = local_1038 + 1;
+        }
+    }
+    AddLiteralArgument(local_1040);
+    return;
+}
+
+void AddEarlyArgument(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+) {
+    char in_AL;
+    int iVar1;
+    char local_1028 [4096];
+    NVCHAR local_28 = 8;
+    char * local_1040;
+    char * local_1038;
+    int local_1034 = 0;
+
+    vsprintf(
+        local_1028,
+        param_9,
+        &local_28
+    );
+
+    //Commit #185: Bruteforced args, returned "nvmake: exceeded maximum argument count!"
+    if (argi > 255) {
+        //Commit #186: We do not know what file nvmake writes to
+        //fprintf(*(FILE **)PTR____stderrp_100007018,"nvmake: exceeded maximum argument count!\n");
+        printf("nvmake: exceeded maximum argument count!\n");
+        exit(1);
+    }
+    argi++;
+    for (local_1034 = argi; local_1034 > 1; local_1034--) {
+        args[local_1034] = args[local_1034 + 1];
+    }
+    target = strdup(local_1028);
+    return;
+}
+
+void AddLiteralArgument(
+    NVCHAR param_1
+) {
+    NVCHAR uVar1 = NULL;
+    long lVar2;
+
+    //Commit #186: Repetition of codeblocks with the same functionality?
+    if (255 > argi) {
+        printf("nvmake: exceeded maximum argument count!\n");
+        exit(1);
+    }
+    //uVar1 = DUP_ARGUMENT(param_1);
+    lVar2 = (long)argi;
+    argi++;
+    args[lVar2] = uVar1;
+    return;
+}*/

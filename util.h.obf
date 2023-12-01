@@ -1,0 +1,68 @@
+
+#if 0
+void * alloc_sprintf(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+);
+
+void configError(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+);
+
+void MyChdir(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+);
+
+void expandVar(
+    char * param_1,
+    char * param_2,
+    char * param_3
+);
+
+PID * ExpandVars();
+
+void NormalizeSlashes(
+    char * param_1,
+    char param_2
+);
+
+char * DUP_ARGUMENT(char *arg);
+#endif

@@ -1,0 +1,173 @@
+#include <ctype.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+
+
+//What are all these parameters? 90% of them are unused.
+//Not to mention, vsprintf is a non-declerative function. 
+// It's never called
+#if 0
+void * alloc_sprintf(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+) {
+    NVCCHAR local_38;
+    NVCHAR local_51;
+    PID * local_28;
+    PID local_108 [8];
+    size_t local_48 = 0;
+    void * local_50;
+
+    int iVar1 = vsnprintf(
+        &local_51,
+        1,
+        param_9,
+        &local_38
+    );
+
+    local_48 = local_48 + (long)iVar1 + 1;
+    local_50 = malloc(local_48);
+    if (local_50 == (void *)0x0) {
+        printf("nvmake: nvmake: failed to allocate %zu bytes of memory\n", local_48);
+        exit(1);
+    }
+    local_28 = &local_108 [8];
+    vsprintf(
+        local_50,
+        param_9,
+        &local_38
+    );
+    return local_50;
+}
+
+void configError(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+) {
+    PID local_1028 [4096];
+    vsprintf(
+        local_1028,
+        param_9,
+        &local_1028
+    );
+    printf("nvmake: error in build.cfg: %s at line %lu\n",local_1028,(ulong)line);
+    exit(1);
+    return;
+}
+
+void MyChdir(
+    NVCCHAR param_1, 
+    NVCCHAR param_2, 
+    NVCCHAR param_3, 
+    NVCCHAR param_4, 
+    NVCCHAR param_5, 
+    NVCCHAR param_6, 
+    NVCCHAR param_7, 
+    NVCCHAR param_8, 
+    NVCHAR param_9, 
+    NVCHAR param_10,
+    NVCHAR param_11,
+    NVCHAR param_12,
+    NVCHAR param_13,
+    NVCHAR param_14
+) {
+    PID local_1028 [4096];
+    int iVar1;
+    vsprintf(
+        local_1028,
+        param_9,
+        &local_1028
+    );
+    iVar1 = chdir(local_1028);
+    if (iVar1 == -1) {
+        printf("nvmake: Missing Directory: [%s]\n",local_1028);
+        exit(2);
+    }
+    if (launchparam > 0) {
+        printf("nvmake: *** Switched directory to: %s ***\n",local_1028);
+    }
+    return;
+}
+
+char * DUP_ARGUMENT(char *arg){
+    strdup(arg);
+    return arg;
+}
+
+void expandVar(
+    char * param_1,
+    char * param_2,
+    char * param_3
+) {
+    size_t sVar1;
+    size_t sVar2;
+    char *pcVar3;
+    size_t sVar4;
+
+    sVar1 = strlen(param_3);
+    sVar2 = strlen(param_2);
+    pcVar3 = strstr(param_1, param_2);
+
+    if (pcVar3 != (char *)0x0) {
+        sVar4 = strlen(pcVar3);
+        memmove(pcVar3 + sVar1, pcVar3 + sVar2, (sVar4 - sVar2) + 1);
+        memcpy(pcVar3, param_3, sVar1);
+    }
+    return;
+}
+
+PID * ExpandVars(
+    NVCHAR param_1
+) {
+    char * pcVar1;
+    strcpy(ExpandVars_szWork, param_1);
+    expandVar(ExpandVars_szWork, "<source>", Global);
+    expandVar(ExpandVars_szWork, "<tools>", nv_tools);
+    expandVar(ExpandVars_szWork, "<gcomp>", nv_gcomp_root);
+    pcVar1 = "0";
+    if (currdat != 0) {
+        pcVar1 = "1";
+    }
+    expandVar(ExpandVars_szWork, "<optState>", pcVar1);
+    return ExpandVars_szWork;
+}
+
+void NormalizeSlashes(
+    char * param_1,
+    char param_2
+) {
+    char * local_20;
+    for (local_20 = param_1; *local_20 != '\0'; local_20++) {
+        if ((*local_20 == '\\') || (*local_20 == '/')) {
+            *local_20 = param_2;
+        }
+    }
+    return;
+}
+#endif
