@@ -1,8 +1,7 @@
 # tool macros
-NVMAKE_VER := "decomp-0.0.1"
-CC ?= gcc # FILL: the compiler
+CC := x86_64-w64-mingw32-gcc # FILL: the compiler
 CXX ?= # FILL: the compiler
-CFLAGS := -g -Wall -Wno-format-security -Wno-unused-variable -Wno-unused-but-set-variable -Dnvmake_ver=$(NVMAKE_VER)# FILL: compile flags
+CFLAGS := -g -Wall -Wextra -Wno-unused-value # FILL: compile flags
 CXXFLAGS := # FILL: compile flags
 DBGFLAGS := -g
 COBJFLAGS := $(CFLAGS) -c
@@ -14,7 +13,7 @@ SRC_PATH := src
 DBG_PATH := debug
 
 # compile macros
-TARGET_NAME := nvmake
+TARGET_NAME := nvmake# FILL: target name
 ifeq ($(OS),Windows_NT)
 	TARGET_NAME := $(addsuffix .exe,$(TARGET_NAME))
 endif

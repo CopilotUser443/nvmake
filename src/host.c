@@ -1,99 +1,81 @@
-#include <string.h>
 #include <stdio.h>
-#include <sys/utsname.h>
+#include <stdlib.h>
+#include <string.h>
+#if defined(__linux__) || defined(__APPLE__)
+    #include <sys/utsname.h>
+    struct utsname host;
+#endif
 
 #include "host.h"
 
-char * GETHOSTARCH(void) {
-    int iVar1;
-    char *local_518;
-    struct utsname local_510;
-    long local_10;
+char * GETHOSTOS()
+{
+#ifdef _WIN32
+    return "Windows";
+#endif
+#if defined(__linux__) || defined(__APPLE__)
+    long long result;
 
-    iVar1 = uname(&local_510);
-    if (iVar1 == 0) {
-        iVar1 = strcmp(local_510.machine, "x86");
-        if (iVar1 != 0) {
-            strcmp(local_510.machine, "i386");
-            if (iVar1 != 0) {
-                strcmp(local_510.machine, "i486");
-                if (iVar1 != 0) {
-                    strcmp(local_510.machine, "i586");
-                    if (iVar1 != 0) {
-                        strcmp(local_510.machine, "i686");
-                        if (iVar1 != 0) {
-                            strcmp(local_510.machine, "i86pc");
-                            if (iVar1 != 0) {
-                                strcmp(local_510.machine, "x86_64");
-                                //Fix compile errors on Windows
-                                if (iVar1 == 0) local_518 = "x86_64";
-                                if (iVar1 != 0) {
-                                    strcmp(local_510.machine, "amd64");
-                                    if (iVar1 == 0) local_518 = "amd64";
-                                    if (iVar1 != 0) {
-                                        printf("Unrecognized host architecture \'%s\'!\n", local_510.machine);
-                                        local_518 = (char *)0x0;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        local_518 = "x86";
+    if (uname(&host)) 
+    {
+        result = 0LL;
+        fprintf(stderr, "Unable to determine host operating system!\n");
     }
-    else {
-        printf("Unable to determine host architecture!\n");
-        local_518 = (char *)0x0;
+    else if (!strcmp(host.sysname, "Linux"))
+    {
+        return "Linux";
     }
-    return local_518;
+    else if (!strcmp(host.sysname, "Solaris"))
+    {
+        return "SunOS";
+    }
+    else if (!strcmp(host.sysname, "FreeBSD"))
+    {
+        return "FreeBSD";
+    }
+    else if (!strcmp(host.sysname, "Darwin"))
+    {
+        return "macosx";
+    }
+    else
+    {
+        result = 0LL;
+        fprintf(stderr, "Unrecognized host operating system '%s'!\n", host.sysname);
+    }
+    return (char *)result;
+#endif 
 }
 
-char * GETHOSTOS(void) {
-    int iVar1;
-    char *local_518;
-    struct utsname local_510;
-    long local_10;
+char * GETHOSTARCH() 
+{
+#ifdef _WIN32
+    return "amd64";
+#endif
+#if defined(__linux__) || defined(__APPLE__)
+    long long result;
 
-    iVar1 = uname(&local_510);
-    if (iVar1 == 0) {
-        iVar1 = strcmp(local_510.sysname, "Linux");
-        if (iVar1 == 0) {
-            local_518 = "Linux";
-        }
-        else {
-            iVar1 = strcmp(local_510.sysname, "Solaris");
-            if (iVar1 == 0) {
-                local_518 = "SunOS";
-            }
-            else {
-                iVar1 = strcmp(local_510.sysname, "FreeBSD");
-                if (iVar1 == 0) {
-                    local_518 = "FreeBSD";
-                }
-                else {
-                    iVar1 = strcmp(local_510.sysname, "Darwin");
-                    if (iVar1 == 0) {
-                        local_518 = "macosx";
-                    }
-                    else {
-                        //Fix builds on Windows
-                        iVar1 = strcmp(local_510.sysname, "Windows");
-                        if (iVar1 == 0) {
-                            local_518 = "Windows";
-                        }
-                        else {
-                            printf("Unrecognized host operating system \'%s\'!\n",local_510.sysname);
-                            local_518 = (char *)0x0;
-                        }
-                    }
-                }
-            }
-        }
-    } else {
-        printf("Unable to determine host operating system!\n");
-        local_518 = (char *)0x0;
+    if (uname(&host))
+    {
+        result = 0LL;
+        fprintf(stderr, "Unable to determine host architecture!\n");
+    } 
+    else if ( !strcmp(host.machine, "x86")
+           || !strcmp(host.machine, "i386")
+           || !strcmp(host.machine, "i486")
+           || !strcmp(host.machine, "i586")
+           || !strcmp(host.machine, "i686")
+           || !strcmp(host.machine, "i86pc") )
+    {
+        return "x86";
     }
-    return local_518;
+    else if (!strcmp(host.machine, "x86_64") || !strcmp(host.machine, "amd64")) {
+        return "amd64";
+    }
+    else 
+    {
+        result = 0LL;
+        fprintf(stderr, "Unrecognized host architecture '%s'!\n", host.machine);
+    }
+    return (char *)result;
+#endif
 }

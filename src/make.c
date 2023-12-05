@@ -2,75 +2,90 @@
 #include <time.h>
 #include <errno.h>
 
-#include "make.h"
-#include "defs.h"
-#include "types.h"
 #include "util.h"
 
+extern int argi;
+extern int launchm;
+extern int debug;
+extern int make_conditions;
+extern int module_conditions;
+extern char * makepath;
+extern const char ** args;
+extern const char ** modules;
 
-int ExecuteGnuMake(void) {
-    FILE * pFVar1;
+unsigned int ExecuteGnuMake()
+{
+    int itteration;
+    unsigned int spawn_return;
     time_t start_time;
     time_t finish_time;
-    ulong total_time;
-    int local_10 = 0;
-    int local_c;
-    uint * last_error;
 
-    if (launchm != 0) {
+    if (launchm) 
+    {
         printf("nvmake: ********** Start Timer **********\n");
         time(&start_time);
     }
-
-    if (launchparam > 0) {
+    if (debug > 0)
+    {
         printf("nvmake: GnuMake Path: [%s]\n", makepath);
         printf("nvmake: GnuMake Args:\n");
-        for (local_c = 1; local_c < argi; local_c++) {
-            printf("         [%s]\n", args[local_c]);
+        for (itteration = 1; itteration < argi; itteration++) 
+        {
+            printf("         [%s]\n", args[itteration]);
         }
         printf("\n");
     }
-
-    args[argi] = 0;
-    local_10 = spawn(makepath, args);
-
-    if (local_10 == -1) {
-        printf("=======================================\n");
-        printf("Failed to execute gnumake\n");
-        printf("  Command: %s\n", makepath);
-        printf("     Args:\n");
-        for (local_c = 1; local_c < argi; local_c++){
-            printf("         [%s]\n", args[local_c]);
+    args[argi] = 0LL;
+    spawn_return = spawn(makepath, args);
+    if (spawn_return == -1U)
+    {
+        fprintf(stderr, "=======================================\n");
+        fprintf(stderr, "Failed to execute gnumake\n");
+        fprintf(stderr, "  Command: %s\n", makepath);
+        fprintf(stderr, "     Args:\n");
+        for (itteration = 1; itteration < argi; itteration++)
+        {
+            fprintf(stderr, "         [%s]\n", args[itteration]);
         }
-        last_error = (uint *)__error();
-        printf("   Status: %lu\n", (ulong)*last_error);
+        fprintf(stderr, "   Status: %d\n", errno);
+        fprintf(stderr, "=======================================\n");
     }
-
-    if (launchm != 0) {
+    if (launchm)
+    {
         time(&finish_time);
-        total_time = finish_time - start_time;
-        printf("nvmake: ********** Elapsed Time %02ld:%02ld (%lu seconds)**********\n", (long)total_time / 60, (long)total_time % 60, total_time & -1);
+        printf("nvmake: ********** Elapsed Time %02ld:%02ld (%d seconds)**********\n",
+                (finish_time - start_time) / 60,
+                (finish_time - start_time) & 60,
+                (unsigned int)(finish_time - start_time));
     }
-    return local_10;
+    return spawn_return;
 }
 
-int MakeAllModules(void) {
-    int local_10 = 0;
-    int local_c = 0;
+unsigned int MakeAllModules(void) 
+{    
+    int itteration;
+    unsigned int result = 0;
 
-    if (gmake_condition < 1) {
-        local_c = ExecuteGnuMake();
-    } else {
-        for (local_10 = 0; local_10 < gmake_condition; local_10++) {
-            if (launchparam > 1) {
-                printf("nvmake: Making Module @ %s\n", modules[local_10]);
+    if (make_conditions <= 0)
+    {
+        return (unsigned int)ExecuteGnuMake();
+    }
+    else
+    {
+        for (itteration = 0; itteration < make_conditions; itteration++)
+        {
+            if (debug > 0)
+            {
+                printf("nvmake: Making Module @ %s\n", modules[itteration]);
             }
-            MyChdir(modules[local_10]);
-            local_c = ExecuteGnuMake();
-            if (((module_condition & 1) == 0) && (local_c != 0)) {
-                return local_c;
+            MyChdir(modules[itteration]);
+            result = ExecuteGnuMake();
+            if ((module_conditions & 1) == 0)
+            {
+                if (result)
+                    break;
             }
         }
     }
-    return local_c;
+    return result;
 }

@@ -1,2 +1,2 @@
-char * GETHOSTARCH(void);
-char * GETHOSTOS(void);
+char * GETHOSTOS();
+char * GETHOSTARCH();

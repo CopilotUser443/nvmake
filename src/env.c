@@ -1,567 +1,602 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
-#include <ctype.h>
 #include <string.h>
-#include <unistd.h>
+#include <stdbool.h>
 #include <sys/stat.h>
+#include <ctype.h>
 
-#include "defs.h"
-#include "parse.h"
-#include "util.h"
-
-void ReadBuildConfigFile(void)
-{
-    bool bVar4;
-    int iVar1;
-    int itteration;
-    char * pcVar2;
-    char * pcVar3;
-    char * next_char;
-    char local_818[1024];
-    char local_418[1032];
-    FILE * buildcfg;
-
-    buildcfg = fopen(config_file, "r");
-    if (buildcfg == (FILE *)0x0)
-    {
-        printf("nvmake: failed to open build config file: %s\n", config_file);
-        exit(1);
-    }
-_BeginLoop:
-    do
-    {
-        pcVar2 = fgets(local_418, 1024, buildcfg);
-        if (pcVar2 == (char *)0x0)
-        {
-            fclose(buildcfg);
-            return;
-        }
-        next_char = local_418;
-        line++;
-        while (true)
-        {
-            bVar4 = false;
-            if (*next_char != '\0')
-            {
-                iVar1 = isspace((int)*next_char);
-                bVar4 = iVar1 != 0;
-            }
-            if (!bVar4)
-                break;
-            next_char++;
-        }
-    } while ((((*next_char == '\0') || (*next_char == '\n')) || (*next_char == '\n')) || (*next_char == '#'));
-    iVar1 = getToken(local_818, &next_char);
-    if (iVar1 == false)
-    {
-        configError("expected %s", "command");
-    }
-    pcVar2 = strstr("WINDOWS-UNIX-MACOSX", local_818);
-    if (pcVar2 != (char *)0x0)
-        goto _CodeGen;
-    goto _BeginParse;
-
-_CodeGen:
 #ifdef _WIN32
-    iVar1 = strcmp(local_818, "WINDOWS");
-#endif
-#ifdef __APPLE__
-    iVar1 = strcmp(local_818, "MACOSX");
-#endif
-#ifdef __linux__
-    iVar1 = strcmp(local_818, "UNIX");
-#endif
-    if (iVar1 == false)
-    {
-        iVar1 = getToken(local_818, &next_char);
-        if (iVar1 == false)
-        {
-            configError("expected %s", "command");
-        }
-_BeginParse:
-        iVar1 = strcmp(local_818, "SET");
-        if (iVar1 == false)
-        {
-            iVar1 = getToken(local_818, &next_char);
-            if (iVar1 == false)
-            {
-                configError("expected %s", "variable name");
-            }
-            iVar1 = strcmp(local_818, "NV_BRANCH");
-            if (iVar1 == false)
-            {
-                iVar1 = getToken(local_818, &next_char);
-                if (iVar1 == false)
-                {
-                    configError("expected %s", "=");
-                }
-                iVar1 = strcmp(local_818, "=");
-                if (iVar1 != false)
-                {
-                    configError("expected %s", "=");
-                }
-                iVar1 = getToken(local_818, &next_char);
-                if (iVar1 == false)
-                {
-                    configError("expected %s", "string constant");
-                }
-                SET = strdup(local_818); // Ambiguous statement
-            }
-            else
-            {
-                iVar1 = strcmp(local_818, "GMAKE");
-                if (iVar1 == false)
-                {
-                    iVar1 = getToken(local_818, &next_char);
-                    if (iVar1 == false)
-                    {
-                        configError("expected %s", "=");
-                    }
-                    iVar1 = strcmp(local_818, "=");
-                    if (iVar1 != 0)
-                    {
-                        configError("expected %s", "=");
-                    }
-                    iVar1 = getToken(local_818, &next_char);
-                    if (iVar1 == 0)
-                    {
-                        configError("expected %s", "string constant");
-                    }
-                    makepath = strdup(local_818);
-                    pcVar2 = (char *)ExpandVars(makepath);
-                    free(makepath);
-                    makepath = strdup(pcVar2);
-                }
-                else
-                {
-                    iVar1 = strcmp(local_818, "GMAKE_FORCE_ARGS");
-                    if (iVar1 == false)
-                    {
-                        iVar1 = getToken(local_818, &next_char);
-                        if (iVar1 == false)
-                        {
-                            configError("expected %s", "=");
-                        }
-                        iVar1 = strcmp(local_818, "=");
-                        if (iVar1 != false)
-                        {
-                            configError("expected %s", "=");
-                        }
-                        iVar1 = getToken(local_818, &next_char);
-                        if (iVar1 == false)
-                        {
-                            configError("expected %s", "string constant");
-                        }
-                        make_forced_args = strdup(local_818);
-                        pcVar2 = (char *)ExpandVars(make_forced_args);
-                        free(make_forced_args);
-                        make_forced_args = strdup(pcVar2);
-                    }
-                    else
-                    {
-                        configError("unexpected variable in SET: %s", local_818);
-                    }
-                }
-            }
-        } else {
-            iVar1 = strcmp(local_818, "MAKECMD");
-            if (iVar1 == false) {
-                //So if the command count exceeds 255, is this error fully ignored?
-                if (ccommand_count == 255) {
-                    configError("too many configurable commands (exceeded maximum of %d)", 256);
-                }
-                iVar1 = getToken(local_818, &next_char);
-                if (iVar1 == false) {
-                    configError("expected %s", "string constant");
-                }
-                pcVar2 = strdup(local_818);
-                ccommands[ccommand_count] = pcVar2;
-                iVar1 = getToken(local_818, &next_char);
-                if (iVar1 == false) {
-                    configError("expected %s", "string constant");
-                }
-                pcVar2 = strdup(local_818);
-                cmodules[ccommand_count] = pcVar2;
-                iVar1 = getToken(local_818, &next_char);
-                if (iVar1 == false) {
-                    configError("expected %s", "string constant");
-                }
-                pcVar2 = strdup(local_818);
-                cnodes[ccommand_count] = pcVar2;
-                ccommand_count++;
-            } else {
-                iVar1 = strcmp(local_818, "CMDALIAS");
-                if (iVar1 == false) {
-                    bVar4 = false;
-                    iVar1 = getToken(local_818, &next_char);
-                    if (iVar1 == false) {
-                        configError("expected %s", "string constant");
-                    }
-                    pcVar2 = strdup(local_818);
-                    for (itteration = 0; ccommand_count > itteration; itteration++) {
-                        iVar1 = strcmp(ccommands[itteration], pcVar2);
-                        if (iVar1 == false) {
-                            bVar4 = true;
-                            break;
-                        }
-                    }
-                    if (!bVar4) {
-                        configError("command %s is not defined so it cannot be aliased",pcVar2);
-                    }
-                    if (aliases[itteration] == 5) {
-                        configError("too many aliases for %s",pcVar2);
-                    }
-                    iVar1 = getToken(local_818, &next_char);
-                    if (iVar1 == false) {
-                        configError("expected %s","string constant");
-                    }
-                    pcVar3 = strdup(local_818);
-                    iVar1 = aliases[itteration];
-                    aliases[itteration] = iVar1 + 1;
-                    *(char **)((long)itteration * 0x50 + 0x10000b3a0 + (long)iVar1 * 8) = pcVar3;
-                    free(pcVar2);
-                } else {
-                    iVar1 = strcmp(local_818, "DEPEND");
-                    if (iVar1 != false) {
-                        configError("expected SET, MAKECMD, CMDALIAS or DEPEND: got [%s]",local_818);
-                    }
-                }
-            }
-        }
-    }
-    goto _BeginLoop;
-}
+#include "unistd.w.h"
 
-void SetupEnvironment(void) {
-    bool bVar4;
-    int iVar1;
-    int NVSourceAvail;
-    int BuildCFGAvail;
-    int NVToolsAvail;
-    int NVAppleToolsAvail;
-    int NVGCompAvail;
-    size_t cwdsize = 1024;
-    size_t sVar2;
-    struct stat * NVSourceStat = NULL;
-    struct stat * BuildCFGStat = NULL;
-    struct stat * NVCommonStat = NULL;
-    struct stat * NVToolsStat = NULL;
-    struct stat * NVAppleToolsStat = NULL;
-    struct stat * NVGCompStat = NULL;
-    char CurrentWorkingDirectory[1033];
-    char local_818[1023];
-    char local_c18[1024];
-    char CWDFnop[1024];
-    char * local_1170;
-    char * local_10d8;
-    char * local_1210;
-    char * local_12b0;
-    char * local_1350;
-    char * pcVar3;
-    char * NVSource = getenv("NV_SOURCE");
-    char * NVTools = getenv("NV_TOOLS");
-    char * NVGCompRoot = getenv("NV_GCOMP_ROOT");
+#elif defined __unix__
+#include <unistd.h>
+#define _stat stat
+
+#endif
+
+
+#include "util.h"
+#include "var.h"
+
+extern int debug;
+extern int line;
+extern int ccommands_count;
+extern char * nv_source;
+extern char * nv_tools;
+extern char * nv_apple_tools;
+extern char * nv_gcomp_root;
+extern char * nv_common;
+extern char * config_path;
+extern char * SET;
+extern char * makepath;
+extern char * make_force_args;
+extern const char * nvmake_wiki;
+extern char ccommands[1024][20];
+extern char cmodules[1024][20];
+extern char cnodes[1024][20]; 
+extern char aliases[1024][20];
+extern char unknown[1024][20];
+
+void SetupEnvironment()
+{
+    int stat_ret;
+    int cfg_file_avail;
+    int cfg_code;
+    int nv_common_avail;
+    int nv_common_code;
+    int nv_tools_avail;
+    int nv_gcomp_root_avail;
+
+    char * nvstr;
+    char * nvstr_2;
+    char * nvstr_3;
+    char * nvstr_4;
+    char * nvcommonfs;
+    char * NVSource = (char*) malloc(1024 * sizeof(char));
+    char * NVTools = (char*) malloc(1024 * sizeof(char));
+    char * NVGCompRoot = (char*) malloc(1024 * sizeof(char));
+
+    nv_source = (char*) malloc(1024 * sizeof(char));
+    nv_tools = (char*) malloc(1024 * sizeof(char));
+    nv_apple_tools = (char*) malloc(1024 * sizeof(char));
+    nv_gcomp_root = (char*) malloc(1024 * sizeof(char));
+    nv_common = (char*) malloc(1024 * sizeof(char));
+    config_path = (char*) malloc(1024 * sizeof(char));
+    SET = (char*) malloc(1024 * sizeof(char));
+    makepath = (char*) malloc(1024 * sizeof(char));
+    make_force_args = (char*) malloc(1024 * sizeof(char));
+
 #ifdef __APPLE__
+    int nv_apple_tools_avail;
+    char * nvapplestr;
     char * NVAppleTools = getenv("NV_APPLE_TOOLS");
 #endif
 
-    if (NVSource == (char *)0x0) {
-        NVSourceAvail = 0;
-        getcwd(CurrentWorkingDirectory + 1, cwdsize);
-        NormalizeSlashes(CurrentWorkingDirectory + 1, '/');
-        sVar2 = strlen(CurrentWorkingDirectory + 1);
-        local_10d8 = CurrentWorkingDirectory + sVar2;
-        do {
-            sprintf(local_818, "%s/drivers/common/build/build.cfg", CurrentWorkingDirectory + 1);
-#ifdef __APPLE__
-            iVar1 = stat(local_818, NVSourceStat);
-#elif _WIN32
-            iVar1 = _stat(local_818, NVSourceStat);
+    char cfgfile[2048];
+    char nv_source_path[2048];
+    char cwd[1032];
+    char common_cwd[1032];
+    char * nv_source_fs;
+    char * cfgfs;
+    char * nv_tools_fs;
+    char * nv_gcomp_root_fs;
+    struct _stat cfgstat;
+    struct _stat nv_source_stat;
+    struct _stat config_stat;
+    struct _stat nv_tools_stat;
+    struct _stat nv_apple_tools_stat;
+    struct _stat nv_gcomp_root_stat;
+
+#ifdef __unix__
+    NVSource    = getenv("NV_SOURCE");
+    NVTools     = getenv("NV_TOOLS");
+    NVGCompRoot = getenv("NV_GCOMP_ROOT"); 
 #endif
-            if (iVar1 != -1) {
-                NVSourceAvail = 1;
-                break;
-            }
-            while ( true ) {
-                bVar4 = false;
-                if (CurrentWorkingDirectory + 1 < local_10d8) {
-                    bVar4 = *local_10d8 != '/';
-                }
-                if (!bVar4) break;
-                local_10d8--;
-            }
-            if (*local_10d8 == '/') {
-                *local_10d8 = '\0';
-                local_10d8--;
-            }
-        } while (CurrentWorkingDirectory + 1 < local_10d8);
-        if (NVSourceAvail == 0) {
-            getcwd(CurrentWorkingDirectory + 1, 1024);
-            NormalizeSlashes(CurrentWorkingDirectory + 1, '/');
-            sVar2 = strlen(CurrentWorkingDirectory + 1);
-            local_10d8 = CurrentWorkingDirectory + sVar2;
-            do {
-                sprintf("%s/common/build/build.cfg", CurrentWorkingDirectory + 1);
-#ifdef __APPLE__
-                iVar1 = stat(local_818, NVSourceStat);
-#elif _WIN32
-                iVar1 = _stat(local_818, NVSourceStat);
+#ifdef _WIN32
+    size_t foundenv;
+
+    getenv_s(&foundenv, NULL, 0, "NV_SOURCE");
+    if (foundenv == 0) NVSource = '\0';
+    else getenv_s(&foundenv, NVSource, sizeof NVSource, "NV_SOURCE");
+
+    getenv_s(&foundenv, NULL, 0, "NV_TOOLS");
+    if (foundenv == 0) NVTools = '\0';
+    else getenv_s(&foundenv, NVTools, sizeof NVTools, "NV_TOOLS");
+
+    getenv_s(&foundenv, NULL, 0, "NV_GCOMP_ROOT");
+    if (foundenv == 0) NVGCompRoot = '\0';
+    else getenv_s(&foundenv, NVGCompRoot, sizeof NVGCompRoot, "NV_GCOMP_ROOT");
 #endif
-                if (iVar1 != -1) {
-                    NVSourceAvail = 1;
-                    break;
+
+    if (NVSource)
+    {
+        strcpy(nv_source, NVSource);
+    }
+    else
+    {
+        cfg_file_avail = 0;
+        getcwd(cwd, 0x400uLL);
+        NormalizeSlashes(cwd, '/');
+        cfgfs = &cwd[strlen(cwd) - 1];
+        while (true)
+        {
+            sprintf(cfgfile, "%s/drivers/common/build/build.cfg", cwd);
+            if (_stat(cfgfile, &cfgstat) != -1) break;
+            while (true)
+            {
+                stat_ret = 0;
+                if (cfgfs > cwd)
+                {
+                    stat_ret = *cfgfs != '/';
                 }
-                while ( true ) {
-                    bVar4 = false;
-                    if (CurrentWorkingDirectory + 1 < local_10d8) {
-                        bVar4 = *local_10d8 != '/';
+                if (!stat_ret) break;
+                cfgfs--;
+            }
+            if (*cfgfs == '/')
+            {
+                nvstr = cfgfs--;
+                *nvstr = 0;
+            }
+            if ( cfgfs <= cwd)
+            {
+                goto _BeginLoop;
+            }
+        }
+        cfg_file_avail = 1;
+_BeginLoop:
+        if ( !cfg_file_avail )
+        {
+            getcwd(cwd, 0x400uLL);
+            NormalizeSlashes(cwd, '/');
+            cfgfs = &cwd[strlen(cwd) - 1];
+            while(true)
+            {
+                sprintf(cfgfile, "%s/common/build/build.cfg", cwd);
+                if (_stat(cfgfile, &cfgstat) != -1) break;
+                while (true)
+                {
+                    cfg_code = 0;
+                    if (cfgfs > cwd)
+                    {
+                        cfg_code = *cfgfs != '/';
                     }
-                    if (!bVar4) break;
-                    local_10d8--;
+                    if (!cfg_code) break;
+                    cfgfs--;
                 }
-                if (*local_10d8 == '/') {
-                    *local_10d8 = '\0';
-                    local_10d8--;
+                if (*cfgfs == '/')
+                {
+                    nvstr_2 = cfgfs--;
+                    *nvstr_2 = 0;
                 }
-            } while (CurrentWorkingDirectory + 1 < local_10d8);
-            if (NVSourceAvail == 0) {
-                printf("nvmake: Unable to locate build.cfg.  \n");
-                printf("Therefore, unable to automatically determine NV_SOURCE.\n");
-                printf("        See %s for more information.\n", "https://engwiki/index.php/Nvmake");
+                if (cfgfs <= cwd) 
+                {
+                    goto _ParseCodes;
+                }
+            }
+            cfg_file_avail = 1;
+_ParseCodes:
+            if (!cfg_file_avail)
+            {
+                fprintf(stderr, "nvmake: Unable to locate build.cfg.  \n");
+                fprintf(stderr, "        Therefore, unable to automatically determine NV_SOURCE.\n");
+                fprintf(stderr, "        See %s for more information.\n", nvmake_wiki);
                 exit(1);
             }
-            strcpy(Global, CurrentWorkingDirectory + 1);
-        } else {
-            strcpy(Global, CurrentWorkingDirectory + 1);
         }
-    } else {
-        strcpy(Global, NVSource);
+        strcpy(nv_source, cwd);
     }
-    NormalizeSlashes(Global, '/');
-    local_1170 = (char *)0x0;
-    sprintf(local_c18, "%s/drivers/common/build/build.cfg", Global);
-#ifdef __APPLE__
-    iVar1 = stat(local_c18, NVCommonStat);
-#elif _WIN32
-    iVar1 = _stat(local_c18, NVCommonStat);
-#endif
-    if (iVar1 != -1) {
-        local_1170 = "/drivers/common";
+    NormalizeSlashes(nv_source, '/');
+    nv_source_fs = '\0';
+    sprintf(nv_source_path, "%s/drivers/common/build/build.cfg", nv_source);
+    if (_stat(nv_source_path, &nv_source_stat) != -1)
+    {
+        nv_source_fs = "/drivers/common";
     }
-    sprintf(local_c18, "%s/common/build/build.cfg", Global);
-#ifdef __APPLE__
-    iVar1 = stat(local_c18, NVCommonStat);
-#elif _WIN32
-    iVar1 = _stat(local_c18, NVCommonStat);
-#endif
-    if (iVar1 != -1) {
-        local_1170 = "/common";
+    sprintf(nv_source_path, "%s/common/build/build.cfg", nv_source);
+    if (_stat(nv_source_path, &nv_source_stat) != -1)
+    {
+        nv_source_fs = "/common";
     }
-    if (local_1170 == (char *)0x0) {
-        printf("nvmake: NV_SOURCE: %s\n",Global);
-        printf("Unable to derive NV_COMMON from NV_SOURCE.\n");
-        printf("Does %s/(drivers/)common/build/build.cfg exist?\n", Global);
-        printf("        See %s for more information.\n", "https://engwiki/index.php/Nvmake");
+    if (!nv_source_fs)
+    {
+        fprintf(stderr, "nvmake: NV_SOURCE: %s\n", nv_source);
+        fprintf(stderr, "        Unable to derive NV_COMMON from NV_SOURCE.\n");
+        fprintf(stderr, "        Does %s/(drivers/)common/build/build.cfg exist?\n", nv_source);
+        fprintf(stderr, "        See %s for more information.\n", nvmake_wiki);
         exit(1);
     }
-    strcpy(nv_common, Global);
-    strcat(nv_common, local_1170);
+    strcpy(nv_common, nv_source);
+    strcat(nv_common, nv_source_fs);
     NormalizeSlashes(nv_common, '/');
-    BuildCFGAvail = 0;
-    getcwd(CWDFnop, cwdsize);
-    NormalizeSlashes(CWDFnop, '/');
-    sVar2 = strlen(CWDFnop);
-    local_1210 = CWDFnop + (sVar2 - 1);
-    do {
-        sprintf(config_file, "%s/build.cfg", CWDFnop);
-#ifdef __APPLE__
-        iVar1 = stat(config_file, BuildCFGStat);
-#elif _WIN32
-        iVar1 = _stat(config_file, BuildCFGStat);
-#endif
-        if (iVar1 != -1) {
-            BuildCFGAvail = 1;
-            break;
+    nv_common_avail = 0;
+    getcwd(common_cwd, 0x400uLL);
+    NormalizeSlashes(common_cwd, '/');
+    nvcommonfs = &common_cwd[strlen(common_cwd) - 1];
+    while (true)
+    {
+        sprintf(config_path, "%s/build.cfg", common_cwd);
+        if (_stat(config_path, &config_stat) != -1) break;
+        while (true)
+        {
+            nv_common_code = 0;
+            if (nvcommonfs > common_cwd)
+                nv_common_code = *nvcommonfs != '/';
+            if (!nv_common_code) break;
+            nvcommonfs--;
         }
-        while ( true ) {
-            bVar4 = false;
-            if (CWDFnop < local_1210) {
-                bVar4 = *local_1210 != '/';
+        if (*nvcommonfs == '/')
+        {
+            nvstr_3 = nvcommonfs--;
+            *nvstr_3 = 0;
+        }
+        if (nvcommonfs <= common_cwd) {
+            goto _ParseConfig;
+        }
+    }
+    nv_common_avail = 1;
+_ParseConfig:
+    if (!nv_common_avail)
+    {
+        sprintf(config_path, "%s/common/build/build.cfg", nv_source);
+        if (_stat(config_path, &config_stat) == -1)
+        {
+            sprintf(config_path, "%s/drivers/common/build/build.cfg", nv_source);
+            if (_stat(config_path, &config_stat) != -1)
+            {
+                nv_common_avail = 1;
             }
-            if (!bVar4) break;
-            local_1210--;
         }
-        if (*local_1210 == '/') {
-            *local_1210 = '\0';
-            local_1210--;
+        else
+        {
+            nv_common_avail = 1;
         }
-    } while (CWDFnop < local_1210);
-    if (BuildCFGAvail == 0) {
-        sprintf(config_file, "%s/common/build/build.cfg", Global);
-#ifdef __APPLE__
-        iVar1 = stat(config_file, BuildCFGStat);
-#elif _WIN32
-        iVar1 = _stat(config_file, BuildCFGStat);
-#endif
-        if (iVar1 == -1) {
-            sprintf(config_file, "%s/drivers/common/build/build.cfg", Global);
-#ifdef __APPLE__
-            iVar1 = stat(config_file, BuildCFGStat);
-#elif _WIN32
-            iVar1 = _stat(config_file, BuildCFGStat);
-#endif
-            if (iVar1 != -1) {
-                BuildCFGAvail = 1;
-            }
-        } else {
-            BuildCFGAvail = 1;
-        }
-        if (BuildCFGAvail == 0) {
-            printf("nvmake: Unable to locate build.cfg file.\n");
-            printf("        See %s for more information.\n", "https://engwiki/index.php/Nvmake");
+        if (!nv_common_avail)
+        {
+            fprintf(stderr, "nvmake: Unable to locate build.cfg file.\n");
+            fprintf(stderr, "        See %s for more information.\n", nvmake_wiki);
             exit(1);
         }
     }
-    if (NVTools == (char *)0x0) {
-        NVToolsAvail = 0;
-        strcpy(nv_tools, Global);
-        NormalizeSlashes(nv_tools, '/');
-        do {
-            local_12b0 = strrchr(nv_tools, '/');
-            if (local_12b0 == (char *)0x0) break;
-            strcpy(local_12b0 + 1, "tools");
-            local_12b0[6] = '\0';
-#ifdef __APPLE__
-            iVar1 = stat(nv_tools, NVToolsStat);
-#elif _WIN32
-            iVar1 = _stat(nv_tools, NVToolsStat);
-#endif
-            if (iVar1 == -1) {
-                *local_12b0 = '\0';
-            } else {
-                NVToolsAvail = 1;
-            }
-        } while (local_12b0 == 0);
-        if (NVToolsAvail == 0) {
-            printf("nvmake: NV_SOURCE: %s\n", Global);
-            printf("Unable to derive NV_TOOLS from NV_SOURCE.\n");
-            printf("        Please set NV_TOOLS.\n");
-            printf("        See %s for more information.\n", "https://engwiki/index.php/Nvmake");
-            exit(1);
-        }
-    } else {
+    if (NVTools)
+    {
         strcpy(nv_tools, NVTools);
         NormalizeSlashes(nv_tools, '/');
     }
-#ifdef __APPLE__
-    if (NVAppleTools == (char *)0x0) {
-        NVAppleToolsAvail = 0;
-        strcpy(nv_apple_tools, Global);
-        NormalizeSlashes(nv_apple_tools, '/');
-        do {
-            local_1350 = strrchr(nv_apple_tools, '/');
-            if (local_1350 == (char *)0x0) break;
-            strcpy(local_1350 + 1, "apple/tools");
-            local_1350[12] = '\0';
-            iVar1 = stat(nv_apple_tools, NVAppleToolsStat);
-            if (iVar1 == -1) {
-                *local_1350 = '\0';
-            } else {
-                NVAppleToolsAvail = 1;
+    else
+    {
+        nv_tools_avail = 0;
+        strcpy(nv_tools, nv_source);
+        NormalizeSlashes(nv_tools, '/');
+        do
+        {
+            nv_tools_fs = strrchr(nv_tools, '/');
+            if (!nv_tools_fs) break;
+            strcpy(nv_tools_fs + 1, "tools");
+            nv_tools_fs[6] = '\0';
+            if (_stat(nv_tools, &nv_tools_stat) == -1)
+            {
+                *nv_tools_fs = 0;
             }
-        } while (NVAppleToolsAvail == 0);
-        if (NVAppleToolsAvail == 0) {
-            strcpy(nv_apple_tools, "<NV_APPLE_TOOLS_NOT_FOUND>");
+            else
+            {
+                nv_tools_avail = 1;
+            }
+        } while ( !nv_tools_avail );
+        if (!nv_tools_avail)
+        {
+            fprintf(stderr, "nvmake: NV_SOURCE: %s\n", nv_source);
+            fprintf(stderr, "        Unable to derive NV_TOOLS from NV_SOURCE.\n");
+            fprintf(stderr, "        Please set NV_TOOLS.\n");
+            fprintf(stderr, "        See %s for more information.\n", nvmake_wiki);
+            exit(1);
         }
-    } else {
+    }
+#ifdef __APPLE__
+    if (NVAppleTools)
+    {
         strcpy(nv_apple_tools, NVAppleTools);
         NormalizeSlashes(nv_apple_tools, '/');
     }
-#endif
-    if (NVGCompRoot == (char *)0x0) {
-        NVGCompAvail = 0;
-        strcpy(nv_gcomp_root, nv_tools);
-        NormalizeSlashes(nv_gcomp_root, '/');
-        pcVar3 = strstr(nv_gcomp_root, "tools");
-        if (pcVar3 != (char *)0x0) {
-            strcpy(pcVar3, "gcomp");
-            pcVar3[5] = '\0';
-#ifdef __APPLE__
-            iVar1 = stat(nv_gcomp_root, NVGCompStat);
-#elif _WIN32
-            iVar1 = _stat(nv_gcomp_root, NVGCompStat);
-#endif
-            if (iVar1 != -1) {
-                NVGCompAvail = 1;
+    else
+    {
+        nv_apple_tools_avail = 0;
+        strcpy(nv_apple_tools, nv_source);
+        NormalizeSlashes(nv_apple_tools, '/');
+        do
+        {
+            nvapplestr = strrchr(nv_apple_tools, '/');
+            if (!nvapplestr) break;
+            strcpy(nvapplestr + 1, "apple/tools");
+            nvapplestr[12] = 0;
+            if (_stat(nvapplestr, &nv_apple_tools_stat) == -1)
+            {
+                *nvapplestr = 0;
             }
-        }
-        if (NVGCompAvail == 0) {
-            getcwd(nv_gcomp_root, cwdsize);
-            NormalizeSlashes(nv_gcomp_root, '/');
-            do {
-                pcVar3 = strrchr(nv_gcomp_root, '/');
-                if (pcVar3 == (char *)0x0) break;
-                strcpy(pcVar3 + 1, "gcomp");
-                pcVar3[5] = '\0';
-#ifdef __APPLE__
-                iVar1 = stat(nv_gcomp_root, NVGCompStat);
-#elif _WIN32
-                iVar1 = _stat(nv_gcomp_root, NVGCompStat);
+            else
+            {
+                nv_apple_tools_avail = 1;
+            }
+        } while (!nv_apple_tools_avail);
+        if (!nv_apple_tools) {
+            strcpy(nv_apple_tools, "<NV_APPLE_TOOLS_NOT_FOUND>");
+        }        
+    }
 #endif
-                if (iVar1 == -1) {
-                    *pcVar3 = '\0';
-                } else {
-                    NVGCompAvail = 1;
-                }
-            } while (NVGCompAvail == 0);
-        }
-        if ((NVGCompAvail == 0) && (strcpy(nv_gcomp_root, "<gCompDirNotFound>"), launchparam > 0)) {
-            printf("nvmake: NV_SOURCE: %s\n", Global);
-            printf("        NV_COMMON: %s\n", nv_common);
-            printf("         NV_TOOLS: %s\n", nv_tools);
-            printf("        Unable to derive NV_GCOMP_ROOT from NV_TOOLS or NV_SOURCE.\n");
-            printf("         NV_GCOMP_ROOT set to: %s\n", nv_gcomp_root);
-        }
-    } else {
+    if (NVGCompRoot)
+    {
         strcpy(nv_gcomp_root, NVGCompRoot);
         NormalizeSlashes(nv_gcomp_root, '/');
     }
+    else
+    {
+        nv_gcomp_root_avail = 0;
+        strcpy(nv_gcomp_root, nv_source);
+        NormalizeSlashes(nv_gcomp_root, '/');
+        nvstr_4 = strstr(nv_gcomp_root, "tools");
+        if (nvstr_4)
+        {
+            strcpy(nvstr_4, "gcomp");
+            nvstr_4[5] = 0;
+            if (_stat(nv_gcomp_root, &nv_apple_tools_stat) != -1)
+            {
+                nv_gcomp_root_avail = 1;
+            }
+        }
+        if (!nv_gcomp_root_avail)
+        {
+            getcwd(nv_gcomp_root, 0x400uLL);
+            NormalizeSlashes(nv_gcomp_root, '/');
+            do
+            {
+                nv_gcomp_root_fs = strrchr(nv_gcomp_root, '/');
+                if (!nv_gcomp_root_fs) break;
+                strcpy(nv_gcomp_root_fs + 1, "gcomp");
+                nv_gcomp_root_fs[5] = 0;
+                if (_stat(nv_gcomp_root, &nv_gcomp_root_stat) == -1)
+                {
+                    *nv_gcomp_root_fs = '\0';
+                }
+                else
+                {
+                    nv_gcomp_root_avail = 1;
+                }
+            } while (!nv_gcomp_root_avail);
+        }
+        if (!nv_gcomp_root_avail)
+        {
+            strcpy(nv_gcomp_root, "<gCompDirNotFound>");
+            if (debug > 0)
+            {
+                fprintf(stderr, "nvmake: NV_SOURCE: %s\n", nv_source);
+                fprintf(stderr, "        NV_COMMON: %s\n", nv_common);
+                fprintf(stderr, "         NV_TOOLS: %s\n", nv_tools);
+                fprintf(stderr, "        Unable to derive NV_GCOMP_ROOT from NV_TOOLS or NV_SOURCE.\n");
+                fprintf(stderr, "         NV_GCOMP_ROOT set to: %s\n", nv_gcomp_root);
+            }
+        }
+    }
     return;
 }
 
-void ShowUsage(const char * nvmake_version) {
-    int first_itteration;
-    int second_itteration;
-    char local_58[72];
+int ReadBuildConfigFile()
+{
+    bool cfgcondition;
+    int tempint;
+    int itteration;
+    unsigned int * v1;
+    unsigned int v2;
+    FILE * cfgfile;
+    char * tmpstring;
+    char * tmpstring_2;
+    char next_token[1024];
+    char buffer[1032];
+    char * citteration;
+    const char * compile_platform;
 
-    printf("-----------------------------| nvmake version %s |--------------------------\n", nvmake_version);
-    for (first_itteration = 0; first_itteration < ccommand_count; first_itteration++) {
-        local_58[0] = 0;
-        strcat(local_58, ccommands[first_itteration]);
-        if (aliases[first_itteration] != 0) {
-            strcat(local_58, "(");
-            for (second_itteration = 0; second_itteration < aliases[first_itteration]; second_itteration++) {
-                strcat(local_58, *(char **)((long)first_itteration * 0x50 + 0x10000b3a0 + (long)second_itteration * 8));
-                if (second_itteration != aliases[first_itteration - 1]) {
-                    strcat(local_58, " ");
+#ifdef _WIN32
+    compile_platform = "WINDOWS";
+#elif defined(__linux__)
+    compile_platform = "UNIX";
+#elif defined(_APPLE__)
+    compile_platform = "MACOSX";
+#endif
+
+    cfgfile = fopen(config_path, "r");
+    if (!cfgfile)
+    {
+        fprintf(stderr, "nvmake: failed to open build config file: %s\n", config_path);
+        exit(1);
+    }
+    while (fgets(buffer, 1024, cfgfile))
+    {
+        line++;
+        for (citteration = buffer; ; citteration++)
+        {
+            cfgcondition = 0;
+            if (*citteration)
+            {
+                cfgcondition = isspace(*citteration) != 0;
+            }
+            if (!cfgcondition) break;
+        }
+        if (*citteration != '\0' && *citteration != '\n' && *citteration != '#')
+        {
+            if (!getToken(next_token, &citteration))
+            {
+                configError("expected %s", "command");
+            }
+            if (!strstr("WINDOWS-UNIX-MACOSX", next_token))
+            {
+                goto _ReadCFG;
+            }
+            if (!strcmp(next_token, compile_platform))
+            {
+                if (!getToken(next_token, &citteration))
+                {
+                    configError("expected %s", "command");
+                }
+_ReadCFG:       
+                if (!strcmp(next_token, "SET"))
+                {
+                    if (!getToken(next_token, &citteration))
+                    {
+                        configError("expected %s", "variable name");
+                    }
+                    if (!strcmp(next_token, "NV_BRANCH"))
+                    {
+                        if (!getToken(next_token, &citteration))
+                        {
+                            configError("expected %s", "=");
+                        }
+                        if (strcmp(next_token, "="))
+                        {
+                            configError("expected %s", "=");
+                        }
+                        if (!getToken(next_token, &citteration))
+                        {
+                            configError("expected %s", "string constant");
+                        }
+                        SET = strdup(next_token);
+                    }
+                    else if (!strcmp(next_token, "GMAKE"))
+                    {
+                        if (!getToken(next_token, &citteration))
+                        {
+                            configError("expected %s", "=");
+                        }
+                        if (strcmp(next_token, "="))
+                        {
+                            configError("expected %s", "=");
+                        }
+                        if (!getToken(next_token, &citteration))
+                        {
+                            configError("expected %s", "string constant");
+                        }
+                        makepath = strdup(next_token);
+                        tmpstring = (char *)ExpandVars(makepath);
+                        free((void *)makepath);
+                        makepath = strdup(tmpstring);
+                    }
+                    else
+                    {
+                        if (strcmp(next_token, "GMAKE_FORCE_ARGS"))
+                        {
+                            configError("unexpected variable in SET: %s", next_token);
+                        }
+                        if (!getToken(next_token, &citteration))
+                        {
+                            configError("expected %s", "=");
+                        }
+                        if (strcmp(next_token, "="))
+                        {
+                            configError("expected %s", "=");
+                        }
+                        if (!getToken(next_token, &citteration))
+                        {
+                            configError("expected %s", "string constant");
+                        }
+                        make_force_args = strdup(next_token);
+                        tmpstring = (char *)ExpandVars(make_force_args);
+                        free((void *)make_force_args);
+                        make_force_args = strdup(tmpstring);
+                    }
+                }
+                else if (!strcmp(next_token, "MAKECMD"))
+                {
+                    if(ccommands_count == 255)
+                    {
+                        configError("too many configurable commands (exceeded maximum of %d)", 256);
+                    }
+                    if (!getToken(next_token, &citteration))
+                    {
+                        configError("expected %s", "string constant");
+                    }
+                    strcpy(ccommands[ccommands_count], strdup(next_token));
+
+                    if (!getToken(next_token, &citteration))
+                    {
+                        configError("expected %s", "string constant");
+                    }
+                    strcpy(cmodules[ccommands_count], strdup(next_token));
+
+                    
+                    if (!getToken(next_token, &citteration))
+                    {
+                        configError("expected %s", "string constant");
+                    }
+                    strcpy(cnodes[ccommands_count], strdup(next_token));
+                    ccommands_count++;
+                }
+                else if (!strcmp(next_token, "CMDALIAS"))
+                {
+                    tempint = 0;
+                    if (!getToken(next_token, &citteration))
+                    {
+                        configError("expected %s", "string constant");
+                    }
+                    tmpstring = strdup(next_token);
+                    for (itteration = 0; itteration < ccommands_count; itteration++)
+                    {
+                        if (!strcmp(ccommands[itteration], tmpstring))
+                        {
+                            tempint = 1;
+                            break;
+                        }
+                    }
+                    if (!tempint)
+                    {
+                        configError("command %s is not defined so it cannot be aliased", tmpstring);
+                    }
+                    if (aliases[itteration] == 5)
+                    {
+                        configError("too many aliases for %s", tmpstring);
+                    }
+                    if (!getToken(next_token, &citteration))
+                    {
+                        configError("expected %s", "string constant");
+                    }
+                    tmpstring_2 = strdup(next_token);
+                    v1 = ccommands[itteration];
+                    v2 = v1[14];
+                    v1[14] = v2 + 1;
+                    strcpy(unknown[v2 + 1], tmpstring_2);
+                    free(tmpstring);
+                }
+                else if (strcmp(next_token, "DEPEND"))
+                {
+                    configError("expected SET, MAKECMD, CMDALIAS or DEPEND: got [%s]", next_token);
                 }
             }
-            strcat(local_58, ")");
         }
-        printf("  %-20s %s\n", local_58, cnodes[first_itteration]);
     }
-    printf("  help                 Help for nvmake.exe (this page)                         \n");
-    printf("  verbose[=n]          Increase detail during build (default=off)              \n");
-    printf("  v                    Synonym for verbose=1                                   \n");
-    printf("  -time                Enables a timer showing the time of each call to gmake  \n");
-    printf("\n");
-    printf("Arguments containing \'=\' (assignments) and starting with \'-\' (make flags) are  \n");
-    printf("passed directly to make.  Arguments starting with \'@\' (special make targets)   \n");
-    printf("are passed directly to make after stripping off the \'@\'.                       \n");
-    printf("\n");
-    printf(" Notes: - multiple modules can be specified and are built in order             \n");
-    printf("====  See %s for more information. ==== \n", "https://engwiki/index.php/Nvmake");
-    printf("------------------------------------------------------------------------------\n");
-    return;
+    return fclose(cfgfile);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

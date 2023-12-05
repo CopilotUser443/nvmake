@@ -1,84 +1,85 @@
-#include <ctype.h>
 #include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
+#include <ctype.h>
 #include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
 
-#include "defs.h"
-#include "util.h"
 #include "arg.h"
 
-void AddArgument (
-    const char * fmt,
-    ...
-) {
-    int iVar1;
-    char buffer[4096];
-    char *local_1040 = NULL;
-    char *local_1038;
-    long local_10;
-    va_list va_args;
+extern int argi;
+extern char ** args;
 
-va_start(va_args, fmt);
-    vsprintf(buffer, fmt, va_args);
-    for (local_1038 = local_1040; *local_1038 != '\0'; local_1038++) {
-        iVar1 = isspace((int)*local_1038);
-        if (iVar1 != 0) {
-            *local_1038 = '\0';
-            if (local_1040 != local_1038) {
-                AddLiteralArgument(local_1040);
+void AddArgument(const char *fmt, ...)
+{
+    char * arg;
+    char * i;
+    char buffer[4096];
+    va_list va;
+
+    va_start(va, fmt);
+    vsprintf(buffer, fmt, va);
+    arg = buffer;
+    for (i = buffer; *i; i++)
+    {
+        if (isspace(*i)) {
+            *i = 0;
+            if (arg != i) {
+                //stub: AddLiteralArgument(arg);
             }
-            local_1040 = local_1038 + 1;
+            arg = i + 1;
         }
     }
-    AddLiteralArgument(local_1040);
-va_end(va_args);
-
+    //stub: AddLiteralArgument(arg);
     return;
 }
 
-void AddEarlyArgument (
-    const char * fmt,
-    ...
-) {
-    char buffer[4096];
+void AddEarlyArgument(const char *arg, ...)
+{
     int itteration;
-    va_list va_args;
+    char buffer[4096];
+    va_list va;
 
-va_start(va_args, fmt);
-    vsprintf(buffer, fmt, va_args);
-    if (argi > 255) {
-        printf("nvmake: exceeded maximum argument count!\n");
+    va_start(va, arg);
+    vsprintf(buffer, arg, va);
+
+    if (argi >= 256)
+    {
+        fprintf(stderr, "nvmake: exceeded maximum argument count!\n");
         exit(98);
     }
-    argi++;
-    for (itteration = argi; itteration > 1; itteration--) {
+
+    for (itteration = argi + 1; itteration > 1; itteration--)
+    {
         args[itteration] = args[itteration - 1];
     }
-va_end(va_args);
+    args[1] = strdup(buffer);
     return;
 }
 
-void AddLiteralArgument (char * argument) {
-    char * uVar1;
-    long lVar2;
+char * DUP_ARGUMENT(const char *arg)
+{
+    return strdup(arg);
+}
 
-    if (argi > 255) {
-        printf("nvmake: exceeded maximum argument count!\n");
-        //Same error, different exit codes????
+void AddLiteralArgument(char * argument)
+{
+    char * result;
+    int arg_count;
+    if (argi >= 256) {
+        fprintf(stderr, "nvmake: exceeded maximum argument count!\n");
         exit(99);
     }
-    uVar1 = DUP_ARGUMENT(argument);
-    lVar2 = (long)argi;
-    argi++;
-    args[lVar2] = uVar1;
+    result = DUP_ARGUMENT(argument);
+    arg_count = argi;
+    argi = arg_count + 1;
+    args[arg_count + 1] = result;
     return;
 }
 
-void RemoveOneArgument(void) {
-
-    if (argi > 0) {
+void RemoveOneArgument()
+{
+    if (argi > 0)
+    {
         argi--;
     }
     return;

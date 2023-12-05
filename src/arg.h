@@ -1,13 +1,5 @@
-void AddArgument (
-    const char * fmt,
-    ...
-);
-
-void AddEarlyArgument (
-    const char * fmt,
-    ...
-);
-
-void AddLiteralArgument (char * argument);
-
-void RemoveOneArgument(void);
+void AddArgument(const char *arg, ...);
+void AddEarlyArgument(const char *arg, ...);
+char * DUP_ARGUMENT(const char *arg);
+void AddLiteralArgument(char * argument);
+void RemoveOneArgument();

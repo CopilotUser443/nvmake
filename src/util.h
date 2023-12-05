@@ -1,36 +1,14 @@
-void * alloc_sprintf (
-    const char * fmt,
-    ...
+#include <stdbool.h>
+
+char * alloc_sprintf(char * fmt, ...);
+void NormalizeSlashes(char * path, char replacement);
+void configError(char * fmt, ...);
+void MyChdir(const char * path, ...);
+unsigned int spawn(
+    char * binpath,
+    const char ** arguments
 );
-
-void configError (
-    const char * fmt,
-    ...
-);
-
-void MyChdir (
-    const char * fmt,
-    ...
-);
-
-void expandVar(
-    char * param_1,
-    char * param_2,
-    char * param_3
-);
-
-char * ExpandVars(
-    const char * defined_var
-);
-
-void NormalizeSlashes(
-    char * param_1,
-    char param_2
-);
-
-char * DUP_ARGUMENT(char *arg);
-
-int spawn(
-    char * binpath, 
-    char **arguments
+int getToken(
+    char * tok,
+    char ** array
 );

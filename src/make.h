@@ -1,2 +1,2 @@
-int ExecuteGnuMake(void);
-int MakeAllModules(void);
+unsigned int ExecuteGnuMake();
+unsigned int MakeAllModules(void);
