@@ -154,7 +154,11 @@ char * alloc_sprintf (
     tmpstr = (char *)malloc(strsize++);
     if ( !tmpstr )
     {
+#ifdef __unix__
         fprintf(stderr, "nvmake: failed to allocate %ld bytes of memory\n", strsize);
+#elif defined(_WIN32)
+        fprintf(stderr, "nvmake: failed to allocate %lld bytes of memory\n", strsize);
+#endif
         exit(1);
     }
     va_end(va);
@@ -217,21 +221,75 @@ unsigned int spawn(
     return status;
 #endif
 #ifdef _WIN32
-    //We can't fork a process under windows
-    int64_t status;
-    status = _spawnve(P_WAIT, binpath, arguments, _environ);
-    if (errno) {
-        fprintf(stderr, "`%s` did not terminate normally: %s\n", binpath, strerror(errno));
+    if (!binpath) {
         return -1U;
     }
-    if (status != -1 && status != 0) {
-        fprintf(stderr, "`%s` exited with status %d\n", binpath, status);
+
+    // Combine binpath and arguments into a single command line
+    char cmdline[1024] = {0};
+    snprintf(cmdline, sizeof(cmdline), "\"%s\"", binpath);
+    for (int i = 0; arguments[i] != NULL; i++) {
+        strncat(cmdline, " ", sizeof(cmdline) - strlen(cmdline) - 1);
+        strncat(cmdline, arguments[i], sizeof(cmdline) - strlen(cmdline) - 1);
+    }
+
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    ZeroMemory(&pi, sizeof(pi));
+
+    // Start the child process.
+    if (!CreateProcess(
+            NULL,         // No module name (use command line)
+            cmdline,      // Command line
+            NULL,         // Process handle not inheritable
+            NULL,         // Thread handle not inheritable
+            FALSE,        // Set handle inheritance to FALSE
+            0,            // No creation flags
+            NULL,         // Use parent's environment block
+            NULL,         // Use parent's starting directory 
+            &si,          // Pointer to STARTUPINFO structure
+            &pi)          // Pointer to PROCESS_INFORMATION structure
+    ) {
+        fprintf(stderr, "CreateProcess failed (%ld).\n", GetLastError());
         return -1U;
     }
-    if (status == -1 ) {
-        fprintf(stderr, "spawnve() encountered an error: %s\n", strerror(errno));
+
+    // Wait until child process exits.
+    WaitForSingleObject(pi.hProcess, INFINITE);
+
+    // Get the exit code of the child process.
+    DWORD exitCode;
+    if (!GetExitCodeProcess(pi.hProcess, &exitCode)) {
+        fprintf(stderr, "GetExitCodeProcess failed (%ld).\n", GetLastError());
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
         return -1U;
     }
+
+    // Close process and thread handles.
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+
+    if (exitCode != 0) {
+        fprintf(stderr, "`%s` exited with status %ld\n", binpath, exitCode);
+        return -1U;
+    }
+
     return 0;
 #endif
 }
+
+#ifdef _WIN32
+int unsetenv(const char *name) {
+    if (name == NULL || *name == '\0' || strchr(name, '=') != NULL) {
+        errno = EINVAL;
+        return -1;
+    }
+    
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "%s=", name);
+    return _putenv(buffer);
+}
+#endif

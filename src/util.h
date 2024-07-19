@@ -8,16 +8,21 @@
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <spawn.h>
+#elif defined(_WIN32)
+#include <windows.h>
 #endif
 #include <stdarg.h>
 #include <ctype.h>
 #include <time.h>
-#include <spawn.h>
 #include <errno.h>
-
 
 #ifndef _UTIL_H_
 #define _UTIL_H_
+
+#ifdef _WIN32
+#define putenv _putenv
+#endif
 
 #define engwiki "https://engwiki/index.php/Nvmake"
 #define BYTEn(x, n)   (*((unsigned char*)&(x)+n))
@@ -59,6 +64,10 @@ bool getToken (char * token, char ** context);
 bool _iscsym (char character);
 char * alloc_sprintf (char * str, ...);
 unsigned int spawn(char * binpath, char ** arguments);
+#ifdef _WIN32
+int unsetenv(const char *name);
+#endif
+
 
 extern struct _Global Global;
 

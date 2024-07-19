@@ -86,11 +86,19 @@ int ExecuteGnuMake()
     if ( Global.GMAKE_TIMER )
     {
         time(&ending_time);
+#ifdef __unix__
         printf(
             "nvmake: ********** Elapsed Time %02ld:%02ld (%ld seconds)**********\n",
             (ending_time - start_time) / 60,
             (ending_time - start_time) % 60,
             (ending_time - start_time));
+#elif defined(_WIN32)
+        printf(
+            "nvmake: ********** Elapsed Time %02lld:%02lld (%lld seconds)**********\n",
+            (ending_time - start_time) / 60,
+            (ending_time - start_time) % 60,
+            (ending_time - start_time));
+#endif
     }
     return result;
 }

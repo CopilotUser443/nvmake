@@ -71,7 +71,7 @@ char * GETHOSTARCH()
         fprintf(stderr, "Unrecognized host architecture '%s'!\n", uts.machine);
     }
 #elif defined(_WIN32)
-    arch = "amd64"
+    arch = "amd64";
 #elif
 #warning "Unrecognized build environment!"
     arch = "\0";

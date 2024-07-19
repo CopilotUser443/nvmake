@@ -2,7 +2,6 @@
 Reverse engineered implementation of NVIDIA's internal nvmake tool.
 
 Based on the nvmake-mac binary. 
-WINDOWS BUILD IS INCOMPLETE!!
 
 # How to compile *you know what*
 
@@ -25,7 +24,7 @@ Run `nvmake depend` to install (EXPECT CRASHES IF YOU USE THE `dev` BRANCH!!)
 -   Yes, you can. But it only works on macOS High Sierra though you can't load the webdriver as it segfaults. If you can get a kernel debugger and iron out the segfaults you *could* run this on macOS.
 
 #### 2) Can you compile *you know what* on Windows?
--   If you manage to port this project to Windows (which shouldn't really be that difficult) then yes.
+-   Yes. Though the dependencies may be a bit different. Please note that this project is only tested to work with mingw-w64. msvc is not tested yet.
 
 #### 3) What is *you know what*?
 -   Spend 10 seconds researching this project and you'll figure it out yourself.

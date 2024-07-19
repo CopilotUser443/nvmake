@@ -113,8 +113,10 @@ LABEL_UNDEFINED_FINDCOMMON:
                     charDiv = lsChar--;
                     *charDiv = 0;
                 }
+/*
                 if ( lsChar <= currentDir )
                 {
+*/
                     if ( !definedSource )
                     {
                         fprintf(stderr, "nvmake: Unable to locate build.cfg.  \n");
@@ -122,7 +124,7 @@ LABEL_UNDEFINED_FINDCOMMON:
                         fprintf(stderr, "        See %s for more information.\n", engwiki);
                         exit(1);
                     }
-                }
+                //} Needs fixing
                 definedSource = true;
             }
         }
